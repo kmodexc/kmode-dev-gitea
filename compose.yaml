@@ -33,7 +33,7 @@ services:
       GITEA__server__ROOT_URL: ${GITEA_ROOT_URL}
       GITEA__server__PROTOCOL: http
       GITEA__server__HTTP_PORT: 3000
-      GITEA__server__SSH_PORT: ${GITEA_SSH_PORT:-2222}
+      GITEA__server__SSH_PORT: ${GITEA_SSH_PORT:-22}
       GITEA__server__START_SSH_SERVER: true
       GITEA__server__LANDING_PAGE: login
 
@@ -63,7 +63,9 @@ services:
     ports:
       # Apache terminates TLS and proxies to this HTTP listener.
       - "${GITEA_HTTP_BIND_ADDRESS:-127.0.0.1}:${GITEA_HTTP_BIND_PORT:-3000}:3000"
-      - "${GITEA_SSH_BIND_ADDRESS:-0.0.0.0}:${GITEA_SSH_BIND_PORT:-2222}:2222"
+      # Gitea's embedded SSH server listens on port 22 inside the container.
+      # GITEA_SSH_BIND_PORT controls the host-side published port.
+      - "${GITEA_SSH_BIND_ADDRESS:-0.0.0.0}:${GITEA_SSH_BIND_PORT:-22}:22"
     volumes:
       - gitea-data:/var/lib/gitea
       - gitea-config:/etc/gitea
