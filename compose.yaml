@@ -16,6 +16,7 @@ services:
 
   gitea:
     image: ${GITEA_IMAGE:-docker.gitea.com/gitea:28.1.0-rootless}
+    entrypoint: ["/bin/sh", "/usr/local/bin/entrypoint-keycloak.sh"]
     restart: unless-stopped
     depends_on:
       db:
@@ -46,6 +47,19 @@ services:
       GITEA__service__ALLOW_ONLY_EXTERNAL_REGISTRATION: true
       GITEA__service__ENABLE_PASSWORD_SIGNIN_FORM: ${GITEA_ENABLE_PASSWORD_SIGNIN_FORM:-false}
       GITEA__service__ENABLE_BASIC_AUTHENTICATION: ${GITEA_ENABLE_BASIC_AUTHENTICATION:-false}
+
+      # These variables are consumed by the startup wrapper to create the
+      # Gitea authentication source. They are not Gitea app.ini settings.
+      KEYCLOAK_AUTO_CONFIGURE: ${KEYCLOAK_AUTO_CONFIGURE:-true}
+      KEYCLOAK_DISCOVERY_URL: ${KEYCLOAK_DISCOVERY_URL:-}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-}
+      KEYCLOAK_GROUP_CLAIM_NAME: ${KEYCLOAK_GROUP_CLAIM_NAME:-}
+      KEYCLOAK_REQUIRED_ROLE: ${KEYCLOAK_REQUIRED_ROLE:-}
+      KEYCLOAK_ADMIN_ROLE: ${KEYCLOAK_ADMIN_ROLE:-}
+      KEYCLOAK_RESTRICTED_ROLE: ${KEYCLOAK_RESTRICTED_ROLE:-}
+      KEYCLOAK_GROUP_TEAM_MAP: ${KEYCLOAK_GROUP_TEAM_MAP:-}
+      KEYCLOAK_GROUP_TEAM_MAP_REMOVAL: ${KEYCLOAK_GROUP_TEAM_MAP_REMOVAL:-false}
     ports:
       # Apache terminates TLS and proxies to this HTTP listener.
       - "${GITEA_HTTP_BIND_ADDRESS:-127.0.0.1}:${GITEA_HTTP_BIND_PORT:-3000}:3000"
@@ -53,6 +67,7 @@ services:
     volumes:
       - gitea-data:/var/lib/gitea
       - gitea-config:/etc/gitea
+      - ./entrypoint-keycloak.sh:/usr/local/bin/entrypoint-keycloak.sh:ro
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
 

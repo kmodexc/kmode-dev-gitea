@@ -22,11 +22,11 @@ Keycloak should provide the standard `openid`, `profile`, and `email` scopes. Th
 ```sh
 cp .env.example .env
 chmod 600 .env
-# Edit .env and set the public Gitea URL and both secrets.
+# Edit .env and set the public Gitea URL, Keycloak client secret, and roles.
 docker compose up -d
 ```
 
-Open `https://git.kmode.dev`. On the first visit, complete Gitea’s setup page and create the bootstrap administrator if the installer asks for one. Password sign-in is disabled by default, so normal access is provided by Keycloak after the source is configured. The database values are already supplied by Compose, so the database host is `db` and the database name, user, and password are already filled in.
+Open `https://git.kmode.dev`. On the first visit, complete Gitea’s setup page and create the bootstrap administrator if the installer asks for one. After the installer writes `INSTALL_LOCK`, the Compose entrypoint automatically creates the Keycloak source and restarts Gitea. Password sign-in is disabled by default, so normal access is provided by Keycloak. The database values are already supplied by Compose, so the database host is `db` and the database name, user, and password are already filled in.
 
 If you need to use the bootstrap account during setup, temporarily set `GITEA_ENABLE_PASSWORD_SIGNIN_FORM=true` and `GITEA_ENABLE_BASIC_AUTHENTICATION=true` in `.env`, run `docker compose up -d`, and set both values back to `false` after Keycloak login works.
 
@@ -52,7 +52,7 @@ Create these client roles, or change the names in `.env`:
 
 The required role is enforced before account creation, so a Keycloak user without it cannot log in. Team permissions come from the target Gitea teams; configure each team’s repository permission in Gitea.
 
-## 4. Add the Keycloak login source
+## 4. Add or update the Keycloak login source
 
 In Gitea, open `Site Administration -> Identity & Access -> Authentication Sources -> Add Authentication Source` and select `OAuth2`.
 
@@ -74,13 +74,13 @@ Use these values:
 
 Save the source and test `Sign in with keycloak` in a private browser window. The callback URL must exactly match the URI registered in Keycloak.
 
-The source can also be created from the container after the initial Gitea setup. This uses all role and team settings from `.env`:
+The source is normally created automatically after the initial Gitea setup. To create it manually or recreate it after deleting it, use:
 
 ```sh
 bash /work/configure-keycloak.sh
 ```
 
-The script is the easiest way to configure the source when password sign-in is disabled. It restarts Gitea after creating the source. It is intended for the initial source; if `keycloak` already exists, update its values in the Gitea UI or remove the source before running it again.
+The script uses all role and team settings from `.env`, then restarts Gitea after creating the source. If `keycloak` already exists, update its values in the Gitea UI or remove the source before running the script again.
 
 ## Reverse proxy
 
