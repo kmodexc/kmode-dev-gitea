@@ -1,10 +1,10 @@
 # Gitea with Keycloak
 
-This stack runs rootless Gitea at `https://git.kmode.dev`, with PostgreSQL and OpenID Connect login backed by the Keycloak realm at `auth.kmode.dev/realms/master`. Apache can terminate TLS and proxy the web listener on `127.0.0.1:3000`; SSH has its own configurable bind address and port.
+This stack runs rootless Gitea at `https://git.kmode.dev`, with PostgreSQL and OpenID Connect login backed by the Keycloak realm configured in `KEYCLOAK_DISCOVERY_URL`. Apache can terminate TLS and proxy the web listener on the configurable local bind address; SSH has its own configurable bind address and port.
 
 ## 1. Create the Keycloak client
 
-In the `master` realm at `https://auth.kmode.dev`, create a client with:
+In the realm identified by `KEYCLOAK_DISCOVERY_URL` at `https://auth.kmode.dev`, create a client with:
 
 - Client ID: `gitea` (or the value of `KEYCLOAK_CLIENT_ID`)
 - Client authentication: enabled
@@ -84,7 +84,7 @@ The script uses all role and team settings from `.env`, then restarts Gitea afte
 
 ## Reverse proxy
 
-The default `.env` binds Gitea’s web listener to `127.0.0.1:3000`, so it is not exposed directly. An Apache virtual host can use:
+The example `.env` binds Gitea’s web listener to `127.0.0.1:10301`, so it is not exposed directly. Use the configured `GITEA_HTTP_BIND_PORT` in the Apache virtual host:
 
 ```apache
 <VirtualHost *:443>
@@ -96,8 +96,8 @@ The default `.env` binds Gitea’s web listener to `127.0.0.1:3000`, so it is no
     ProxyPreserveHost On
     RequestHeader set X-Forwarded-Proto "https"
     RequestHeader set X-Forwarded-Host "git.kmode.dev"
-    ProxyPass        / http://127.0.0.1:3000/
-    ProxyPassReverse / http://127.0.0.1:3000/
+    ProxyPass        / http://127.0.0.1:10301/
+    ProxyPassReverse / http://127.0.0.1:10301/
 </VirtualHost>
 ```
 

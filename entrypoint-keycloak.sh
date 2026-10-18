@@ -1,8 +1,19 @@
 #!/bin/sh
 set -eu
 
+# The rootless image currently uses docker-entrypoint.sh. Keep a fallback for
+# older Gitea images that used the shorter /usr/bin/entrypoint path.
+if [ -x /usr/local/bin/docker-entrypoint.sh ]; then
+  GITEA_ENTRYPOINT=/usr/local/bin/docker-entrypoint.sh
+elif [ -x /usr/bin/entrypoint ]; then
+  GITEA_ENTRYPOINT=/usr/bin/entrypoint
+else
+  echo "Unable to find the Gitea image entrypoint" >&2
+  exit 127
+fi
+
 if [ "${KEYCLOAK_AUTO_CONFIGURE:-true}" != "true" ]; then
-  exec /usr/bin/entrypoint "$@"
+  exec "$GITEA_ENTRYPOINT" "$@"
 fi
 
 # Keep normal Gitea startup available until the OIDC settings are filled in.
@@ -12,7 +23,7 @@ if [ -z "${KEYCLOAK_DISCOVERY_URL:-}" ] || \
    [ -z "${KEYCLOAK_GROUP_CLAIM_NAME:-}" ] || \
    [ -z "${KEYCLOAK_REQUIRED_ROLE:-}" ]; then
   echo "Keycloak auto-configuration is disabled until complete KEYCLOAK_* settings are supplied" >&2
-  exec /usr/bin/entrypoint "$@"
+  exec "$GITEA_ENTRYPOINT" "$@"
 fi
 
 configure_keycloak() {
@@ -46,7 +57,7 @@ configure_keycloak() {
 }
 
 # Start Gitea normally while waiting for the first installation to finish.
-/usr/bin/entrypoint "$@" &
+"$GITEA_ENTRYPOINT" "$@" &
 gitea_pid=$!
 
 terminate_gitea() {
@@ -80,7 +91,7 @@ if ! gitea admin auth list 2>/dev/null | grep -Eq '(^|[[:space:]])keycloak([[:sp
     kill "$gitea_pid" 2>/dev/null || true
     wait "$gitea_pid" 2>/dev/null || true
     trap - TERM INT
-    exec /usr/bin/entrypoint "$@"
+    exec "$GITEA_ENTRYPOINT" "$@"
   else
     echo "Keycloak authentication source could not be created; Gitea will continue without it" >&2
   fi
