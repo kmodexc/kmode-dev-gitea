@@ -10,8 +10,14 @@ In the realm identified by `KEYCLOAK_DISCOVERY_URL` at `https://auth.kmode.dev`,
 - Client authentication: enabled
 - Standard flow: enabled
 - Direct access grants: disabled
+- Proof Key for Code Exchange Code Challenge Method: blank / disabled
 - Valid redirect URI: `https://git.kmode.dev/user/oauth2/keycloak/callback`
 - Web origin: `https://git.kmode.dev`
+
+The Gitea server-side OAuth login flow does not send PKCE parameters in this
+configuration. Leave the Keycloak client's PKCE challenge method blank;
+otherwise Keycloak rejects the callback with `Missing parameter:
+code_challenge_method`.
 
 Copy the generated client secret into `KEYCLOAK_CLIENT_SECRET` in `.env`.
 
